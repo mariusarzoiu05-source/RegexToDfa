@@ -1,6 +1,7 @@
-﻿using System;
+﻿using LFC_TEMA1.Core;
+using System;
 using System.IO;
-using LFC_TEMA1.Core;
+using System.Text.RegularExpressions;
 
 class Program
 {
@@ -15,9 +16,10 @@ class Program
         {
             Console.WriteLine("\n=== MENIU LFC_TEMA1 ===");
             Console.WriteLine("1) Citește expresia regulată din input.txt");
-            Console.WriteLine("2) Afișează postfix");
-            Console.WriteLine("3) Afișează DFA curent");
-            Console.WriteLine("4) Verifică un cuvânt în DFA curent");
+            Console.WriteLine("2) Afișează expresia regulată cu concatenare");
+            Console.WriteLine("3) Afișează postfix");
+            Console.WriteLine("4) Afișează DFA curent");
+            Console.WriteLine("5) Verifică un cuvânt în DFA curent");
             Console.WriteLine("0) Ieșire");
             Console.Write("Alege: ");
 
@@ -31,14 +33,18 @@ class Program
                     break;
 
                 case "2":
+                    TokenizeRegex();
+                    break; 
+
+                case "3":
                     ShowPostfixPlaceholder();
                     break;
 
-                case "3":
+                case "4":
                     ShowDfa();
                     break;
 
-                case "4":
+                case "5":
                     CheckWordInDfa();
                     break;
 
@@ -55,7 +61,7 @@ class Program
     // ---------- Opțiuni meniu ----------
     static void LoadRegexFromFile()
     {
-        var path = Path.Combine(AppContext.BaseDirectory, "input.txt");
+        var path = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.FullName, "input.txt");
         if (!File.Exists(path))
         {
             Console.WriteLine($"❌ Nu am găsit {path}. Creează un fișier input.txt lângă .csproj.");
@@ -66,6 +72,92 @@ class Program
         Console.WriteLine($"✅ Regex încărcat: {_regex}");
     }
 
+    static string InsertConcatenationOperators(List<string> tokens)
+    {
+        var result = new List<string>();
+
+        for (int i = 0; i < tokens.Count; i++)
+        {
+            string current = tokens[i];
+            result.Add(current);
+
+            if (i == tokens.Count - 1)
+                break;
+
+            string next = tokens[i + 1];
+
+            bool currentIsOperator = "*|+?()".Contains(current[0]);
+            bool nextIsOperator = "*|+?()".Contains(next[0]);
+
+            bool currentIsSymbol = !currentIsOperator || current == ")";
+            bool nextIsSymbol = !nextIsOperator || next == "(";
+
+            bool needsConcat = (currentIsSymbol && nextIsSymbol) || (currentIsSymbol && next == "(") ||
+                               (current == ")" && nextIsSymbol) || (current == ")" && next == "(") ||
+                               ((current == "*" || current == "+" || current == "?") && (nextIsSymbol || next == "(")); 
+
+            if (needsConcat)
+                result.Add(".");
+        }
+
+        return string.Join("", result);
+    }
+    static void TokenizeRegex()
+    {
+        var tokens = new List<string>();
+
+        foreach (char c in _regex)
+            tokens.Add(c.ToString()); 
+
+        _regex = InsertConcatenationOperators(tokens); 
+        Console.WriteLine($"✅ Regex concatenat: {_regex}");
+    }
+    static string RegexToPostfix()
+    {
+        var output = new List<char>();
+        var stack = new Stack<char>();
+        var prec = new Dictionary<char, int> { { '*', 3 }, { '+', 3 }, { '.', 2 }, { '|', 1 } };
+
+        foreach (var token in _regex)
+        {
+            if (!"*|+.()".Contains(token)) 
+            {
+                output.Add(token);
+            }
+            else if (token == '(')
+            {
+                stack.Push(token);
+            }
+            else if (token == ')')
+            {
+                while (stack.Count > 0 && stack.Peek() != '(')
+                    output.Add(stack.Pop());
+
+                if (stack.Count == 0)
+                    throw new Exception("Mismatched parentheses");
+
+                stack.Pop(); // stergem '('
+            }
+            else 
+            {
+                while (stack.Count > 0 && stack.Peek() != '(' && prec[stack.Peek()] >= prec[token])
+                    output.Add(stack.Pop());
+
+                stack.Push(token);
+            }
+        }
+
+        while (stack.Count > 0)
+        {
+            if (stack.Peek() == '(' || stack.Peek() == ')')
+                throw new Exception("Mismatched parentheses");
+
+            output.Add(stack.Pop());
+        }
+
+        return new string(output.ToArray());
+    }
+
     static void ShowPostfixPlaceholder()
     {
         if (string.IsNullOrWhiteSpace(_regex))
@@ -74,8 +166,8 @@ class Program
             return;
         }
 
-        // aici veți conecta ulterior: var postfix = RegexToPostfix.Convert(_regex);
-        Console.WriteLine("📌 Postfix: (în curând – va fi implementat de colega)");
+        string postfix = RegexToPostfix();
+        Console.WriteLine($"📌 Postfix: {postfix}"); 
     }
 
     static void ShowDfa()
