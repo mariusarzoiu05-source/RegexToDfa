@@ -1,6 +1,7 @@
-﻿using System;
+﻿using LFC_TEMA1.Core;
+using System;
 using System.IO;
-using LFC_TEMA1.Core;
+using System.Text.RegularExpressions;
 
 class Program
 {
@@ -111,6 +112,51 @@ class Program
         _regex = InsertConcatenationOperators(tokens); 
         Console.WriteLine($"✅ Regex concatenat: {_regex}");
     }
+    static string RegexToPostfix()
+    {
+        var output = new List<char>();
+        var stack = new Stack<char>();
+        var prec = new Dictionary<char, int> { { '*', 3 }, { '+', 3 }, { '.', 2 }, { '|', 1 } };
+
+        foreach (var token in _regex)
+        {
+            if (!"*|+.()".Contains(token)) 
+            {
+                output.Add(token);
+            }
+            else if (token == '(')
+            {
+                stack.Push(token);
+            }
+            else if (token == ')')
+            {
+                while (stack.Count > 0 && stack.Peek() != '(')
+                    output.Add(stack.Pop());
+
+                if (stack.Count == 0)
+                    throw new Exception("Mismatched parentheses");
+
+                stack.Pop(); // stergem '('
+            }
+            else 
+            {
+                while (stack.Count > 0 && stack.Peek() != '(' && prec[stack.Peek()] >= prec[token])
+                    output.Add(stack.Pop());
+
+                stack.Push(token);
+            }
+        }
+
+        while (stack.Count > 0)
+        {
+            if (stack.Peek() == '(' || stack.Peek() == ')')
+                throw new Exception("Mismatched parentheses");
+
+            output.Add(stack.Pop());
+        }
+
+        return new string(output.ToArray());
+    }
 
     static void ShowPostfixPlaceholder()
     {
@@ -120,8 +166,8 @@ class Program
             return;
         }
 
-        // aici veți conecta ulterior: var postfix = RegexToPostfix.Convert(_regex);
-        Console.WriteLine("📌 Postfix: (în curând – va fi implementat de colega)");
+        string postfix = RegexToPostfix();
+        Console.WriteLine($"📌 Postfix: {postfix}"); 
     }
 
     static void ShowDfa()
