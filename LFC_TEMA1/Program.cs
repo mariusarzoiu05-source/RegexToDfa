@@ -2,11 +2,16 @@
 using System;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Collections.Generic;  // dacă nu exista deja
+
 
 class Program
 {
     static string? _regex;                 // regex curent (din fișier)
     static DeterministicFiniteAutomaton _dfa = BuildSampleDfa(); // DFA curent (de test)
+    static string? _postfix;              // postfix-ul expresiei regulate
+    static SyntaxNode? _syntaxTree;       // arborele sintactic curent
+
 
     static void Main()
     {
@@ -21,6 +26,7 @@ class Program
             Console.WriteLine("4) Afișează DFA curent");
             Console.WriteLine("5) Verifică un cuvânt în DFA curent");
             Console.WriteLine("0) Ieșire");
+            Console.WriteLine("6) Afișează arborele sintactic");
             Console.Write("Alege: ");
 
             var opt = Console.ReadLine();
@@ -47,6 +53,10 @@ class Program
                 case "5":
                     CheckWordInDfa();
                     break;
+                case "6":
+                    ShowSyntaxTree();
+                    break;
+
 
                 case "0":
                     return;
@@ -162,13 +172,54 @@ class Program
     {
         if (string.IsNullOrWhiteSpace(_regex))
         {
-            Console.WriteLine("ℹ️ Întâi alege opțiunea 1 (încarcă regex din input.txt).");
+            Console.WriteLine("ℹ️ Întâi alege opțiunea 1 (încarcă regex) și 2 (concatenare).");
             return;
         }
 
-        string postfix = RegexToPostfix();
-        Console.WriteLine($"📌 Postfix: {postfix}"); 
+        _postfix = RegexToPostfix();
+        Console.WriteLine($"📌 Postfix: {_postfix}");
     }
+    static void ShowSyntaxTree()
+    {
+        if (string.IsNullOrWhiteSpace(_postfix))
+        {
+            Console.WriteLine("ℹ️ Întâi folosește opțiunea 3 (afișează postfix).");
+            return;
+        }
+
+        // Construim arborele din postfix și îl memorăm
+        _syntaxTree = SyntaxTreeBuilder.BuildFromPostfix(_postfix);
+
+        Console.WriteLine("📌 Arbore sintactic (structură):");
+        PrintSyntaxTree(_syntaxTree, "", true);
+    }
+
+    // Funcție recursivă pentru afișarea arborelui
+    static void PrintSyntaxTree(SyntaxNode node, string indent, bool last)
+    {
+        Console.Write(indent);
+        Console.Write(last ? "└─" : "├─");
+
+        switch (node)
+        {
+            case SymbolNode s:
+                Console.WriteLine($"{s.Symbol} (pos={s.Position})");
+                break;
+
+            case UnaryNode u:
+                Console.WriteLine(u.Op);
+                PrintSyntaxTree(u.Child, indent + (last ? "  " : "│ "), true);
+                break;
+
+            case BinaryNode b:
+                Console.WriteLine(b.Op);
+                PrintSyntaxTree(b.Left, indent + (last ? "  " : "│ "), false);
+                PrintSyntaxTree(b.Right, indent + (last ? "  " : "│ "), true);
+                break;
+        }
+    }
+
+
 
     static void ShowDfa()
     {
