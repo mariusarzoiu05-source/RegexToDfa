@@ -25,8 +25,9 @@ class Program
             Console.WriteLine("3) Afișează postfix");
             Console.WriteLine("4) Afișează DFA curent");
             Console.WriteLine("5) Verifică un cuvânt în DFA curent");
-            Console.WriteLine("0) Ieșire");
             Console.WriteLine("6) Afișează arborele sintactic");
+            Console.WriteLine("7) Construiește DFA din arbore");
+            Console.WriteLine("0) Ieșire");
             Console.Write("Alege: ");
 
             var opt = Console.ReadLine();
@@ -53,10 +54,14 @@ class Program
                 case "5":
                     CheckWordInDfa();
                     break;
+
                 case "6":
                     ShowSyntaxTree();
                     break;
 
+                case "7":
+                    BuildDfaFromTree();
+                    break;
 
                 case "0":
                     return;
@@ -119,7 +124,9 @@ class Program
         foreach (char c in _regex)
             tokens.Add(c.ToString()); 
 
-        _regex = InsertConcatenationOperators(tokens); 
+        _regex = InsertConcatenationOperators(tokens);
+        _regex = $"({_regex}).#";
+
         Console.WriteLine($"✅ Regex concatenat: {_regex}");
     }
     static string RegexToPostfix()
@@ -238,6 +245,18 @@ class Program
         var w = Console.ReadLine() ?? string.Empty;
         var ok = _dfa.CheckWord(w);
         Console.WriteLine(ok ? "✅ Acceptat" : "❌ Respins");
+    }
+
+    static void BuildDfaFromTree()
+    {
+        if (_syntaxTree == null)
+        {
+            Console.WriteLine("Mai întâi construiește arborele (opțiunea 6).");
+            return;
+        }
+
+        _dfa = RegexToDfaBuilder.BuildDfa(_syntaxTree);
+        Console.WriteLine("DFA construit din expresia regulată!");
     }
 
     // ---------- DFA de probă: acceptă DOAR „ab” ----------

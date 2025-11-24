@@ -6,6 +6,7 @@ namespace LFC_TEMA1.Core
     public abstract class SyntaxNode
     {
         // Astea le va folosi colega ta mai târziu pentru DFA.
+        public static Dictionary<int, SyntaxNode> PositionToNode { get; } = new();
         public bool Nullable { get; set; }
         public HashSet<int> FirstPos { get; } = new();
         public HashSet<int> LastPos { get; } = new();
@@ -25,6 +26,8 @@ namespace LFC_TEMA1.Core
             Nullable = false;
             FirstPos.Add(position);
             LastPos.Add(position);
+
+            SyntaxNode.PositionToNode[position] = this;
         }
     }
 
