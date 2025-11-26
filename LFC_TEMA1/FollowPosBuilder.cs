@@ -1,83 +1,159 @@
-﻿using System.Collections.Generic;
-using LFC_TEMA1.Core;
+﻿using System;
+using System.Collections.Generic;
 
 namespace LFC_TEMA1.Core
 {
+    /// <summary>
+    /// Calculează nullable, firstpos, lastpos și followpos pentru arborele sintactic.
+    /// Se bazează pe nodurile definite în SyntaxNode.cs.
+    /// </summary>
     public static class FollowPosBuilder
     {
+        /// <summary>
+        /// întoarce dicționarul followpos: poziție -> mulțimea de poziții
+        /// </summary>
         public static Dictionary<int, HashSet<int>> Build(SyntaxNode root)
         {
             var followpos = new Dictionary<int, HashSet<int>>();
-            ComputeProps(root, followpos);
+            Compute(root, followpos);
             return followpos;
         }
 
-        private static void ComputeProps(SyntaxNode node, Dictionary<int, HashSet<int>> follow)
+        private static void Ensure(Dictionary<int, HashSet<int>> fp, int pos)
+        {
+            if (!fp.ContainsKey(pos))
+                fp[pos] = new HashSet<int>();
+        }
+
+        /// <summary>
+        /// Parcurgere bottom-up pe arbore:
+        ///  - calculează pentru fiecare nod: Nullable, FirstPos, LastPos
+        ///  - actualizează followpos pentru operatorii . și *, +
+        /// </summary>
+        private static void Compute(
+            SyntaxNode node,
+            Dictionary<int, HashSet<int>> followpos)
         {
             switch (node)
             {
                 case SymbolNode s:
-                    // deja setat în constructor
+                    // La frunză avem deja setate Nullable / FirstPos / LastPos în constructor.
+                    Ensure(followpos, s.Position);
                     break;
 
                 case UnaryNode u:
-                    ComputeProps(u.Child, follow);
-                    u.Nullable = (u.Op == '*') ? true : false;
+                    // întâi calculează copilul
+                    Compute(u.Child, followpos);
+
+                    // preluăm first/last de la copil
                     u.FirstPos.Clear();
                     u.FirstPos.UnionWith(u.Child.FirstPos);
+
                     u.LastPos.Clear();
                     u.LastPos.UnionWith(u.Child.LastPos);
 
-                    if (u.Op == '*' || u.Op == '+')
+                    // nullable + followpos în funcție de operator
+                    switch (u.Op)
                     {
-                        foreach (var p in u.LastPos)
-                            foreach (var f in u.FirstPos)
-                                AddFollow(follow, p, f);
+                        case '*':
+                            // e* este mereu nullable
+                            u.Nullable = true;
+
+                            // pentru fiecare i din lastpos(e) adaugăm firstpos(e) la followpos(i)
+                            foreach (var i in u.Child.LastPos)
+                            {
+                                Ensure(followpos, i);
+                                followpos[i].UnionWith(u.Child.FirstPos);
+                            }
+                            break;
+
+                        case '+':
+                            // e+ are aceleași first/last, dar nullable = nullable(e)
+                            u.Nullable = u.Child.Nullable;
+
+                            // ca la *, și aici pot urma alte repetări
+                            foreach (var i in u.Child.LastPos)
+                            {
+                                Ensure(followpos, i);
+                                followpos[i].UnionWith(u.Child.FirstPos);
+                            }
+                            break;
+
+                        case '?':
+                            // e? este întotdeauna nullable
+                            u.Nullable = true;
+                            // nu modificăm followpos
+                            break;
+
+                        default:
+                            throw new InvalidOperationException($"Operator unar necunoscut: {u.Op}");
                     }
+
                     break;
 
                 case BinaryNode b:
-                    ComputeProps(b.Left, follow);
-                    ComputeProps(b.Right, follow);
+                    // întâi copii
+                    Compute(b.Left, followpos);
+                    Compute(b.Right, followpos);
 
-                    if (b.Op == '.')
+                    if (b.Op == '|')
                     {
-                        b.Nullable = b.Left.Nullable && b.Right.Nullable;
-
-                        b.FirstPos.Clear();
-                        b.FirstPos.UnionWith(b.Left.FirstPos);
-                        if (b.Left.Nullable)
-                            b.FirstPos.UnionWith(b.Right.FirstPos);
-
-                        b.LastPos.Clear();
-                        b.LastPos.UnionWith(b.Right.LastPos);
-                        if (b.Right.Nullable)
-                            b.LastPos.UnionWith(b.Left.LastPos);
-
-                        // followpos pentru concatenare
-                        foreach (var i in b.Left.LastPos)
-                            foreach (var j in b.Right.FirstPos)
-                                AddFollow(follow, i, j);
-                    }
-                    else if (b.Op == '|')
-                    {
+                        // OR
                         b.Nullable = b.Left.Nullable || b.Right.Nullable;
+
                         b.FirstPos.Clear();
                         b.FirstPos.UnionWith(b.Left.FirstPos);
                         b.FirstPos.UnionWith(b.Right.FirstPos);
+
                         b.LastPos.Clear();
                         b.LastPos.UnionWith(b.Left.LastPos);
                         b.LastPos.UnionWith(b.Right.LastPos);
                     }
-                    break;
-            }
-        }
+                    else if (b.Op == '.')
+                    {
+                        // CONCAT
+                        b.Nullable = b.Left.Nullable && b.Right.Nullable;
 
-        private static void AddFollow(Dictionary<int, HashSet<int>> dict, int i, int j)
-        {
-            if (!dict.ContainsKey(i))
-                dict[i] = new HashSet<int>();
-            dict[i].Add(j);
+                        b.FirstPos.Clear();
+                        if (b.Left.Nullable)
+                        {
+                            b.FirstPos.UnionWith(b.Left.FirstPos);
+                            b.FirstPos.UnionWith(b.Right.FirstPos);
+                        }
+                        else
+                        {
+                            b.FirstPos.UnionWith(b.Left.FirstPos);
+                        }
+
+                        b.LastPos.Clear();
+                        if (b.Right.Nullable)
+                        {
+                            b.LastPos.UnionWith(b.Left.LastPos);
+                            b.LastPos.UnionWith(b.Right.LastPos);
+                        }
+                        else
+                        {
+                            b.LastPos.UnionWith(b.Right.LastPos);
+                        }
+
+                        // followpos: pentru fiecare i din lastpos(stânga)
+                        // adăugăm firstpos(dreapta) la followpos(i)
+                        foreach (var i in b.Left.LastPos)
+                        {
+                            Ensure(followpos, i);
+                            followpos[i].UnionWith(b.Right.FirstPos);
+                        }
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"Operator binar necunoscut: {b.Op}");
+                    }
+
+                    break;
+
+                default:
+                    throw new InvalidOperationException("Tip de nod necunoscut în arbore.");
+            }
         }
     }
 }
