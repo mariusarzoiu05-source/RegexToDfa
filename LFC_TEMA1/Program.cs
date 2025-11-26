@@ -8,7 +8,7 @@ using System.Collections.Generic;  // dacă nu exista deja
 class Program
 {
     static string? _regex;                 // regex curent (din fișier)
-    static DeterministicFiniteAutomaton _dfa = BuildSampleDfa(); // DFA curent (de test)
+    static DeterministicFiniteAutomaton? _dfa; // DFA curent (de test)
     static string? _postfix;              // postfix-ul expresiei regulate
     static SyntaxNode? _syntaxTree;       // arborele sintactic curent
 
