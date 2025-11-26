@@ -23,10 +23,10 @@ class Program
             Console.WriteLine("1) Citește expresia regulată din input.txt");
             Console.WriteLine("2) Afișează expresia regulată cu concatenare");
             Console.WriteLine("3) Afișează postfix");
-            Console.WriteLine("4) Afișează DFA curent");
-            Console.WriteLine("5) Verifică un cuvânt în DFA curent");
-            Console.WriteLine("6) Afișează arborele sintactic");
-            Console.WriteLine("7) Construiește DFA din arbore");
+            Console.WriteLine("4) Afișează arborele sintactic");
+            Console.WriteLine("5) Construiește DFA din arbore");
+            Console.WriteLine("6) Afișează DFA curent");
+            Console.WriteLine("7) Verifică un cuvânt în DFA curent");
             Console.WriteLine("0) Ieșire");
             Console.Write("Alege: ");
 
@@ -41,26 +41,26 @@ class Program
 
                 case "2":
                     TokenizeRegex();
-                    break; 
+                    break;
 
                 case "3":
                     ShowPostfixPlaceholder();
                     break;
 
                 case "4":
-                    ShowDfa();
-                    break;
-
-                case "5":
-                    CheckWordInDfa();
-                    break;
-
-                case "6":
                     ShowSyntaxTree();
                     break;
 
-                case "7":
+                case "5":
                     BuildDfaFromTree();
+                    break;
+
+                case "6":
+                    ShowDfa();
+                    break;
+
+                case "7":
+                    CheckWordInDfa();
                     break;
 
                 case "0":
@@ -119,10 +119,15 @@ class Program
     }
     static void TokenizeRegex()
     {
-        var tokens = new List<string>();
+        if (string.IsNullOrWhiteSpace(_regex))
+        {
+            Console.WriteLine("ℹ️ Întâi alege opțiunea 1 (încarcă expresia regulată).");
+            return;
+        }
 
+        var tokens = new List<string>();
         foreach (char c in _regex)
-            tokens.Add(c.ToString()); 
+            tokens.Add(c.ToString());
 
         _regex = InsertConcatenationOperators(tokens);
         _regex = $"({_regex}).#";
@@ -194,7 +199,6 @@ class Program
             return;
         }
 
-        // Construim arborele din postfix și îl memorăm
         _syntaxTree = SyntaxTreeBuilder.BuildFromPostfix(_postfix);
 
         Console.WriteLine("📌 Arbore sintactic (structură):");
@@ -230,14 +234,37 @@ class Program
 
     static void ShowDfa()
     {
-        if (!_dfa.VerifyAutomaton())
+        if (_dfa == null)
         {
-            Console.WriteLine("❌ Automat invalid (ar trebui reconstruit).");
+            Console.WriteLine("ℹ️ Nu există încă un DFA (folosește opțiunea 5 mai întâi).");
             return;
         }
-        Console.WriteLine("✅ Automat valid:");
-        _dfa.PrintAutomaton(Console.Out);
+
+        if (!_dfa.VerifyAutomaton())
+        {
+            Console.WriteLine("❌ Automat invalid (reconstruiește-l cu opțiunea 5).");
+            return;
+        }
+
+        // Construim textul DFA-ului
+        using var sw = new StringWriter();
+        _dfa.PrintAutomaton(sw);
+        string dfaText = sw.ToString();
+
+        // Salvăm în fișier lângă input.txt
+        var projectDir = Directory.GetParent(Directory.GetCurrentDirectory())!
+                                  .Parent!
+                                  .Parent!
+                                  .FullName;
+
+        var path = Path.Combine(projectDir, "dfa_out.txt");
+        File.WriteAllText(path, dfaText);
+
+        // Mesaj simplu
+        Console.WriteLine("✅ DFA generat și salvat în dfa_out.txt.");
     }
+
+
 
     static void CheckWordInDfa()
     {
@@ -251,12 +278,13 @@ class Program
     {
         if (_syntaxTree == null)
         {
-            Console.WriteLine("Mai întâi construiește arborele (opțiunea 6).");
+            Console.WriteLine("ℹ️ Mai întâi construiește arborele (opțiunea 4).");
             return;
         }
 
         _dfa = RegexToDfaBuilder.BuildDfa(_syntaxTree);
-        Console.WriteLine("DFA construit din expresia regulată!");
+        Console.WriteLine("✅ DFA construit din expresia regulată curentă! "
+                        + "Acum poți folosi opțiunea 6 (afișează DFA) și 7 (verifică cuvânt).");
     }
 
     // ---------- DFA de probă: acceptă DOAR „ab” ----------
