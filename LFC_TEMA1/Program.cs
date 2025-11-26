@@ -130,10 +130,10 @@ class Program
             tokens.Add(c.ToString());
 
         _regex = InsertConcatenationOperators(tokens);
-        _regex = $"({_regex}).#";
 
         Console.WriteLine($"✅ Regex concatenat: {_regex}");
     }
+
     static string RegexToPostfix()
     {
         var output = new List<char>();
@@ -142,7 +142,7 @@ class Program
 
         foreach (var token in _regex)
         {
-            if (!"*|+.()".Contains(token)) 
+            if (!"*|+.()".Contains(token))
             {
                 output.Add(token);
             }
@@ -158,9 +158,9 @@ class Program
                 if (stack.Count == 0)
                     throw new Exception("Mismatched parentheses");
 
-                stack.Pop(); // stergem '('
+                stack.Pop(); // ștergem '('
             }
-            else 
+            else
             {
                 while (stack.Count > 0 && stack.Peek() != '(' && prec[stack.Peek()] >= prec[token])
                     output.Add(stack.Pop());
@@ -179,6 +179,7 @@ class Program
 
         return new string(output.ToArray());
     }
+
 
     static void ShowPostfixPlaceholder()
     {
@@ -276,27 +277,20 @@ class Program
 
     static void BuildDfaFromTree()
     {
-        if (_syntaxTree == null)
+        if (string.IsNullOrWhiteSpace(_postfix))
         {
-            Console.WriteLine("ℹ️ Mai întâi construiește arborele (opțiunea 4).");
+            Console.WriteLine("ℹ️ Mai întâi generează postfixul (opțiunea 3).");
             return;
         }
 
-        _dfa = RegexToDfaBuilder.BuildDfa(_syntaxTree);
-        Console.WriteLine("✅ DFA construit din expresia regulată curentă! "
-                        + "Acum poți folosi opțiunea 6 (afișează DFA) și 7 (verifică cuvânt).");
+        // PAS I: Regex -> NFA cu λ (Thompson)
+        var nfa = RegexToNfaBuilder.BuildFromPostfix(_postfix);
+
+        // PAS II: NFA-λ -> DFA (subset construction)
+        _dfa = NfaToDfaConverter.Convert(nfa);
+
+        Console.WriteLine("✅ DFA construit prin metoda Thompson (NFA-λ) + subset construction.");
     }
 
-    // ---------- DFA de probă: acceptă DOAR „ab” ----------
-    static DeterministicFiniteAutomaton BuildSampleDfa()
-    {
-        var dfa = new DeterministicFiniteAutomaton();
-        dfa.States.UnionWith(new[] { 0, 1, 2 });
-        dfa.Sigma.UnionWith(new[] { 'a', 'b' });
-        dfa.Q0 = 0;
-        dfa.F.Add(2);
-        dfa.Delta[(0, 'a')] = 1;
-        dfa.Delta[(1, 'b')] = 2;
-        return dfa;
-    }
+
 }
