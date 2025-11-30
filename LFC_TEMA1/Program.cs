@@ -2,15 +2,15 @@
 using System;
 using System.IO;
 using System.Text.RegularExpressions;
-using System.Collections.Generic;  // dacă nu exista deja
+using System.Collections.Generic;  
 
 
 class Program
 {
-    static string? _regex;                 // regex curent (din fișier)
-    static DeterministicFiniteAutomaton? _dfa; // DFA curent (de test)
+    static string? _regex;                 // regex curent 
+    static DeterministicFiniteAutomaton? _dfa; // DFA curent 
     static string? _postfix;              // postfix-ul expresiei regulate
-    static SyntaxNode? _syntaxTree;       // arborele sintactic curent
+    static SyntaxNode? _syntaxTree;       // arborele sintactic 
 
 
     static void Main()
@@ -19,7 +19,7 @@ class Program
 
         while (true)
         {
-            Console.WriteLine("\n=== MENIU LFC_TEMA1 ===");
+            Console.WriteLine("\n=== MENIU TEMA1 ===");
             Console.WriteLine("1) Citește expresia regulată din input.txt");
             Console.WriteLine("2) Afișează expresia regulată cu concatenare");
             Console.WriteLine("3) Afișează postfix");
