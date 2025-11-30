@@ -16,17 +16,16 @@ class Program
     static void Main()
     {
         Console.OutputEncoding = System.Text.Encoding.UTF8;
+        LoadRegexFromFile();
+        TokenizeRegex();
 
         while (true)
         {
             Console.WriteLine("\n=== MENIU TEMA1 ===");
-            Console.WriteLine("1) Citește expresia regulată din input.txt");
-            Console.WriteLine("2) Afișează expresia regulată cu concatenare");
-            Console.WriteLine("3) Afișează postfix");
-            Console.WriteLine("4) Afișează arborele sintactic");
-            Console.WriteLine("5) Construiește DFA din arbore");
-            Console.WriteLine("6) Afișează DFA curent");
-            Console.WriteLine("7) Verifică un cuvânt în DFA curent");
+            Console.WriteLine("1) Afișează forma poloneză postfixată");
+            Console.WriteLine("2) Afișează arborele sintactic");
+            Console.WriteLine("3) Afișează automat curent");
+            Console.WriteLine("4) Verifică un cuvânt");
             Console.WriteLine("0) Ieșire");
             Console.Write("Alege: ");
 
@@ -36,30 +35,19 @@ class Program
             switch (opt)
             {
                 case "1":
-                    LoadRegexFromFile();
-                    break;
-
-                case "2":
-                    TokenizeRegex();
-                    break;
-
-                case "3":
                     ShowPostfixPlaceholder();
                     break;
 
-                case "4":
+                case "2":
                     ShowSyntaxTree();
                     break;
 
-                case "5":
+                case "3":
                     BuildDfaFromTree();
-                    break;
-
-                case "6":
                     ShowDfa();
                     break;
 
-                case "7":
+                case "4":
                     CheckWordInDfa();
                     break;
 
@@ -79,12 +67,12 @@ class Program
         var path = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.FullName, "input.txt");
         if (!File.Exists(path))
         {
-            Console.WriteLine($"❌ Nu am găsit {path}. Creează un fișier input.txt lângă .csproj.");
+            Console.WriteLine($"Nu am găsit {path}. Creează un fișier input.txt lângă .csproj.");
             return;
         }
 
         _regex = File.ReadAllText(path).Trim();
-        Console.WriteLine($"✅ Regex încărcat: {_regex}");
+        Console.WriteLine($"Regex încărcat: {_regex}");
     }
 
     static string InsertConcatenationOperators(List<string> tokens)
@@ -121,7 +109,7 @@ class Program
     {
         if (string.IsNullOrWhiteSpace(_regex))
         {
-            Console.WriteLine("ℹ️ Întâi alege opțiunea 1 (încarcă expresia regulată).");
+            Console.WriteLine("Întâi încarcă expresia regulată.");
             return;
         }
 
@@ -131,7 +119,7 @@ class Program
 
         _regex = InsertConcatenationOperators(tokens);
 
-        Console.WriteLine($"✅ Regex concatenat: {_regex}");
+        Console.WriteLine($"Regex concatenat: {_regex}");
     }
 
     static string RegexToPostfix()
@@ -185,24 +173,24 @@ class Program
     {
         if (string.IsNullOrWhiteSpace(_regex))
         {
-            Console.WriteLine("ℹ️ Întâi alege opțiunea 1 (încarcă regex) și 2 (concatenare).");
+            Console.WriteLine("Întâi alege încarcă regex și concatenează.");
             return;
         }
 
         _postfix = RegexToPostfix();
-        Console.WriteLine($"📌 Postfix: {_postfix}");
+        Console.WriteLine($"Postfix: {_postfix}");
     }
     static void ShowSyntaxTree()
     {
         if (string.IsNullOrWhiteSpace(_postfix))
         {
-            Console.WriteLine("ℹ️ Întâi folosește opțiunea 3 (afișează postfix).");
+            Console.WriteLine("Întâi folosește opțiunea 1 (afișează postfix).");
             return;
         }
 
         _syntaxTree = SyntaxTreeBuilder.BuildFromPostfix(_postfix);
 
-        Console.WriteLine("📌 Arbore sintactic (structură):");
+        Console.WriteLine("Arbore sintactic (structură):");
         PrintSyntaxTree(_syntaxTree, "", true);
     }
 
@@ -237,13 +225,13 @@ class Program
     {
         if (_dfa == null)
         {
-            Console.WriteLine("ℹ️ Nu există încă un DFA (folosește opțiunea 5 mai întâi).");
+            Console.WriteLine("Nu există încă un DFA.");
             return;
         }
 
         if (!_dfa.VerifyAutomaton())
         {
-            Console.WriteLine("❌ Automat invalid (reconstruiește-l cu opțiunea 5).");
+            Console.WriteLine("Automat invalid.");
             return;
         }
 
@@ -260,9 +248,7 @@ class Program
 
         var path = Path.Combine(projectDir, "dfa_out.txt");
         File.WriteAllText(path, dfaText);
-
-        // Mesaj simplu
-        Console.WriteLine("✅ DFA generat și salvat în dfa_out.txt.");
+        Console.WriteLine("DFA generat și salvat în dfa_out.txt.");
     }
 
 
@@ -272,24 +258,24 @@ class Program
         Console.Write("Introdu cuvântul: ");
         var w = Console.ReadLine() ?? string.Empty;
         var ok = _dfa.CheckWord(w);
-        Console.WriteLine(ok ? "✅ Acceptat" : "❌ Respins");
+        Console.WriteLine(ok ? "Acceptat" : "Respins");
     }
 
     static void BuildDfaFromTree()
     {
         if (string.IsNullOrWhiteSpace(_postfix))
         {
-            Console.WriteLine("ℹ️ Mai întâi generează postfixul (opțiunea 3).");
+            Console.WriteLine("Mai întâi generează postfixul.");
             return;
         }
 
-        // PAS I: Regex -> NFA cu λ (Thompson)
+        // PAS I: Regex -> AFN cu λ 
         var nfa = RegexToNfaBuilder.BuildFromPostfix(_postfix);
 
-        // PAS II: NFA-λ -> DFA (subset construction)
+        // PAS II: AFN-λ -> AFD
         _dfa = NfaToDfaConverter.Convert(nfa);
 
-        Console.WriteLine("✅ DFA construit prin metoda Thompson (NFA-λ) + subset construction.");
+        Console.WriteLine("DFA construit.");
     }
 
 

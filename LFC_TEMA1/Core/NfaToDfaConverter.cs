@@ -10,12 +10,12 @@ namespace LFC_TEMA1.Core
             var dfa = new DeterministicFiniteAutomaton();
             dfa.Sigma.UnionWith(nfa.Sigma);
 
-            // map: mulțime de stări NFA -> stare DFA (int)
+            // map: mulțime de stări AFN -> stare AFD (int)
             var stateMap = new Dictionary<string, int>();
             var queue = new Queue<HashSet<int>>();
             int nextId = 0;
 
-            // λ-închiderea lui start(NFA)
+            // λ-închiderea lui start(AFN)
             var startSet = nfa.LambdaClosure(nfa.Start);
             string startKey = SetKey(startSet);
             stateMap[startKey] = nextId;
@@ -64,7 +64,7 @@ namespace LFC_TEMA1.Core
                 }
             }
 
-            // stări finale: cele care conțin vreun final din NFA
+            // stări finale: cele care conțin vreun final din AFN
             foreach (var kv in stateMap)
             {
                 string key = kv.Key;

@@ -158,7 +158,6 @@ namespace LFC_TEMA1.Core
                 dst.Lambda[kv.Key].UnionWith(kv.Value);
             }
 
-            // AcceptStates și Start NU le copiem aici – le gestionează funcțiile de compoziție
         }
     }
 }

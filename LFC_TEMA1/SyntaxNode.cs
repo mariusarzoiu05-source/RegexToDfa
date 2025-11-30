@@ -5,7 +5,6 @@ namespace LFC_TEMA1.Core
     // Nod abstract de bază
     public abstract class SyntaxNode
     {
-        // Astea le va folosi colega ta mai târziu pentru DFA.
         public static Dictionary<int, SyntaxNode> PositionToNode { get; } = new();
         public bool Nullable { get; set; }
         public HashSet<int> FirstPos { get; } = new();
@@ -22,7 +21,6 @@ namespace LFC_TEMA1.Core
         {
             Symbol = symbol;
             Position = position;
-            // Deocamdată nu ne complicăm, dar setăm ceva logic:
             Nullable = false;
             FirstPos.Add(position);
             LastPos.Add(position);

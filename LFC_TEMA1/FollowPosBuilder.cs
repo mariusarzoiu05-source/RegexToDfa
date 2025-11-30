@@ -3,15 +3,11 @@ using System.Collections.Generic;
 
 namespace LFC_TEMA1.Core
 {
-    /// <summary>
     /// Calculează nullable, firstpos, lastpos și followpos pentru arborele sintactic.
     /// Se bazează pe nodurile definite în SyntaxNode.cs.
-    /// </summary>
     public static class FollowPosBuilder
     {
-        /// <summary>
-        /// întoarce dicționarul followpos: poziție -> mulțimea de poziții
-        /// </summary>
+        /// întoarcem dicționarul followpos: poziție -> mulțimea de poziții
         public static Dictionary<int, HashSet<int>> Build(SyntaxNode root)
         {
             var followpos = new Dictionary<int, HashSet<int>>();
@@ -25,11 +21,9 @@ namespace LFC_TEMA1.Core
                 fp[pos] = new HashSet<int>();
         }
 
-        /// <summary>
         /// Parcurgere bottom-up pe arbore:
         ///  - calculează pentru fiecare nod: Nullable, FirstPos, LastPos
         ///  - actualizează followpos pentru operatorii . și *, +
-        /// </summary>
         private static void Compute(
             SyntaxNode node,
             Dictionary<int, HashSet<int>> followpos)
@@ -42,7 +36,7 @@ namespace LFC_TEMA1.Core
                     break;
 
                 case UnaryNode u:
-                    // întâi calculează copilul
+                    // calculează copilul
                     Compute(u.Child, followpos);
 
                     // preluăm first/last de la copil
@@ -136,8 +130,7 @@ namespace LFC_TEMA1.Core
                             b.LastPos.UnionWith(b.Right.LastPos);
                         }
 
-                        // followpos: pentru fiecare i din lastpos(stânga)
-                        // adăugăm firstpos(dreapta) la followpos(i)
+                        // followpos: pentru fiecare i din lastpos(stânga) adăugăm firstpos(dreapta) la followpos(i)
                         foreach (var i in b.Left.LastPos)
                         {
                             Ensure(followpos, i);

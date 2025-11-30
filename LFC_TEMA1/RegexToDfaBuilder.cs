@@ -8,14 +8,14 @@ namespace LFC_TEMA1.Core
     {
         public static DeterministicFiniteAutomaton BuildDfa(SyntaxNode root)
         {
-            // 1️⃣ Construim followpos
+            // Construim followpos
             var followpos = FollowPosBuilder.Build(root);
 
-            // 2️⃣ Mapăm pozițiile simbolurilor
+            // Mapăm pozițiile simbolurilor
             var symbols = new Dictionary<int, char>();
             CollectSymbols(root, symbols);  // include și #
 
-            // 3️⃣ Inițializăm DFA
+            // Inițializăm DFA
             var dfa = new DeterministicFiniteAutomaton();
             var start = new HashSet<int>(root.FirstPos);
             var stateIdMap = new Dictionary<string, int>(); // key = set de poziții
@@ -27,7 +27,7 @@ namespace LFC_TEMA1.Core
             dfa.Q0 = nextId;
             queue.Enqueue(start);
 
-            // 4️⃣ Construim stările DFA
+            // Construim stările DFA
             while (queue.Count > 0)
             {
                 var S = queue.Dequeue();
@@ -67,7 +67,7 @@ namespace LFC_TEMA1.Core
                 }
             }
 
-            // 5️⃣ Determinăm stările finale (care conțin poziția lui #)
+            // Determinăm stările finale (care conțin poziția lui #)
             int endPos = -1;
             foreach (var kv in symbols)
                 if (kv.Value == '#')

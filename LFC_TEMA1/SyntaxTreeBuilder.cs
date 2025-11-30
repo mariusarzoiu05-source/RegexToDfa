@@ -4,7 +4,7 @@ namespace LFC_TEMA1.Core
 {
     public static class SyntaxTreeBuilder
     {
-        // Construiește arborele din expresia postfix
+        // Construim arborele din expresia postfix
         public static SyntaxNode BuildFromPostfix(string postfix)
         {
             var stack = new Stack<SyntaxNode>();
