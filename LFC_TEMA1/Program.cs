@@ -77,34 +77,32 @@ class Program
 
     static string InsertConcatenationOperators(List<string> tokens)
     {
+        bool IsLiteral(string x) => x.Length == 1 && !"|.*+?()".Contains(x[0]);
+
         var result = new List<string>();
 
         for (int i = 0; i < tokens.Count; i++)
         {
-            string current = tokens[i];
-            result.Add(current);
+            string cur = tokens[i];
+            result.Add(cur);
 
-            if (i == tokens.Count - 1)
-                break;
+            if (i == tokens.Count - 1) break;
 
             string next = tokens[i + 1];
 
-            bool currentIsOperator = "*|+?()".Contains(current[0]);
-            bool nextIsOperator = "*|+?()".Contains(next[0]);
+            bool leftCanConcat =
+                IsLiteral(cur) || cur == ")" || cur == "*" || cur == "+" || cur == "?";
 
-            bool currentIsSymbol = !currentIsOperator || current == ")";
-            bool nextIsSymbol = !nextIsOperator || next == "(";
+            bool rightCanConcat =
+                IsLiteral(next) || next == "(";
 
-            bool needsConcat = (currentIsSymbol && nextIsSymbol) || (currentIsSymbol && next == "(") ||
-                               (current == ")" && nextIsSymbol) || (current == ")" && next == "(") ||
-                               ((current == "*" || current == "+" || current == "?") && (nextIsSymbol || next == "(")); 
-
-            if (needsConcat)
+            if (leftCanConcat && rightCanConcat)
                 result.Add(".");
         }
 
         return string.Join("", result);
     }
+
     static void TokenizeRegex()
     {
         if (string.IsNullOrWhiteSpace(_regex))
@@ -126,11 +124,11 @@ class Program
     {
         var output = new List<char>();
         var stack = new Stack<char>();
-        var prec = new Dictionary<char, int> { { '*', 3 }, { '+', 3 }, { '.', 2 }, { '|', 1 } };
+        var prec = new Dictionary<char, int> { { '*', 3 }, { '+', 3 }, { '?', 3 }, { '.', 2 }, { '|', 1 } };
 
         foreach (var token in _regex)
         {
-            if (!"*|+.()".Contains(token))
+            if (!"*|+.?()".Contains(token))
             {
                 output.Add(token);
             }
@@ -249,17 +247,25 @@ class Program
         var path = Path.Combine(projectDir, "dfa_out.txt");
         File.WriteAllText(path, dfaText);
         Console.WriteLine("DFA generat și salvat în dfa_out.txt.");
+
     }
 
 
 
     static void CheckWordInDfa()
     {
+        if (_dfa == null)
+        {
+            Console.WriteLine("Întâi generează DFA (opțiunea 3).");
+            return;
+        }
+
         Console.Write("Introdu cuvântul: ");
         var w = Console.ReadLine() ?? string.Empty;
         var ok = _dfa.CheckWord(w);
         Console.WriteLine(ok ? "Acceptat" : "Respins");
     }
+
 
     static void BuildDfaFromTree()
     {

@@ -12,7 +12,7 @@ namespace LFC_TEMA1.Core
 
             foreach (char t in postfix)
             {
-                if (t == '.' || t == '|' || t == '*')
+                if (t == '.' || t == '|' || t == '*' || t == '+' || t == '?')
                 {
                     // operatori
                     if (t == '*')
@@ -20,10 +20,20 @@ namespace LFC_TEMA1.Core
                         var a = stack.Pop();
                         stack.Push(Star(a, ref nextState));
                     }
+                    else if (t == '+')
+                    {
+                        var a = stack.Pop();
+                        stack.Push(Plus(a, ref nextState));
+                    }
+                    else if (t == '?')
+                    {
+                        var a = stack.Pop();
+                        stack.Push(Question(a, ref nextState));
+                    }
                     else if (t == '.')
                     {
-                        var b = stack.Pop(); // dreapta
-                        var a = stack.Pop(); // stânga
+                        var b = stack.Pop();
+                        var a = stack.Pop();
                         stack.Push(Concat(a, b));
                     }
                     else if (t == '|')
@@ -159,5 +169,31 @@ namespace LFC_TEMA1.Core
             }
 
         }
+        private static NfaLambda EpsilonNfa(ref int nextState)
+        {
+            var nfa = new NfaLambda();
+            int s = nextState++;
+            int f = nextState++;
+            nfa.Start = s;
+            nfa.AcceptStates.Add(f);
+            nfa.AddLambda(s, f);
+            return nfa;
+        }
+
+        private static NfaLambda Question(NfaLambda a, ref int nextState)
+        {
+            // A? = A | ε
+            var eps = EpsilonNfa(ref nextState);
+            return Union(a, eps, ref nextState);
+        }
+
+        private static NfaLambda Plus(NfaLambda a, ref int nextState)
+        {
+            // A+ = A · A*
+            // (fără clonare, facem Star pe același automat: ok pentru tema de lab, dar ideal e clonă)
+            var aStar = Star(a, ref nextState);
+            return Concat(a, aStar);
+        }
+
     }
 }
